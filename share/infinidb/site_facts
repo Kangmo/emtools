@@ -1,0 +1,171 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+DOCUMENTATION = '''
+---
+module: site_facts
+version_added: n/a
+short_description: Gathers InfiniDB-specific facts about remote hosts
+options:
+description:
+     - This module retrieves facts specific to InfiniDB and InfiniDB
+       enterprise manager.
+notes:
+author: Bob Wilkinson
+'''
+
+EXAMPLES = """
+# Display site_facts from all hosts 
+ansible all -m site_facts
+"""
+import os
+import glob
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+def parse_releasenum(contents):
+    version = None
+    release = None
+    for l in contents:
+        if l.find('version=') == 0:
+            version = l[8:].strip()
+        elif l.find('release=') == 0:
+            release = l[8:].strip()
+    if version and release:
+        return '%s-%s' % (version, release)
+    else:
+        return None
+
+def main():
+    global module
+    module = AnsibleModule(
+        argument_spec = dict(),
+        supports_check_mode = True,
+    )
+    
+    data = {}
+
+    if os.environ.has_key('HOME'):
+        data['homedir'] = os.environ['HOME']
+    else:
+        data['homedir'] = ''
+
+    # check for passwordless sudo if not running as root
+    if os.environ['USER'] != 'root':
+        rc, out, err = module.run_command('sudo -n echo sudo_check')
+        print out,err
+        if out.find('sudo_check') == 0:
+            data['sudo'] = True
+        else:
+            data['sudo'] = False
+    else:
+        # root user is always ok because we don't actually use sudo
+        data['sudo'] = True
+        
+    # check for hadoop    
+    rc, out, err = module.run_command('which hadoop')
+    if rc == 0:
+        rc, out, err = module.run_command('hadoop version')
+        data['hadoop_version'] = out.split('\n')[0]
+    else:
+        data['hadoop_version'] = None
+    
+    # check for gluster    
+    rc, out, err = module.run_command('which gluster')
+    if rc == 0:
+        rc, out, err = module.run_command('gluster --version')
+        data['gluster_version'] = out.split('\n')[0]
+    else:
+        data['gluster_version'] = None         
+
+    # check for pdsh    
+    data['pdsh_version'] = None
+    rc, out, err = module.run_command('pdsh -V')
+    if rc == 0:
+        # expected output is pdsh-2.27 (+readline)
+        import re
+        m = re.search('pdsh-([0-9\.]+)', out)
+        if m:
+            data['pdsh_version'] = m.group(1) 
+
+    # this should find most non-root user installs
+    rc, out, err = module.run_command('sudo -n bash -c "ls /home/*/Calpont/etc/Calpont.xml"')
+
+    # if we found an InfiniDB user the path to calpont.xml should be on stdout
+    nonroot = out
+    
+    # check for an InfiniDB install
+    if os.path.exists('/usr/local/Calpont/etc/Calpont.xml'):
+        data['infinidb_installdir'] = '/usr/local/Calpont'
+        data['infinidb_xml'] = '/usr/local/Calpont/etc/Calpont.xml'
+        f = open('/usr/local/Calpont/releasenum')
+        data['infinidb_version'] = parse_releasenum(f.readlines())
+        data['infinidb_user'] = 'root'
+    elif len(nonroot) > 0:
+        data['infinidb_installdir'] = '/'.join(nonroot.split('/')[:-2])
+        data['infinidb_xml'] = nonroot
+        rc, out, err = module.run_command('sudo -n bash -c "cat %s/releasenum"' % data['infinidb_installdir'])
+        data['infinidb_version'] = parse_releasenum(out.split('\n'))
+        data['infinidb_user'] = nonroot.split('/')[2]        
+    else:
+        data['infinidb_installdir'] = ''
+        data['infinidb_xml'] = ''
+        data['infinidb_version'] = ''        
+        data['infinidb_user'] = ''
+
+    # FIXME:
+    infinidb_installdir = '/opt/infinidb/em'
+    data['collectd_version'] = ''
+    data['python-stack_version'] = ''
+    data['graphite_version'] = ''
+    data['tools_version'] = ''
+    # check for various service scripts
+    if os.path.exists('/etc/init.d/infinidb-em-collectd'):
+        data['has_collectd'] = True
+        rc, out, err = module.run_command("%s/collectd/sbin/collectd -h  | awk -F'[ ,]' '/^collectd/ {print $2}'" % infinidb_installdir)
+        if rc == 0:
+            data['collectd_version'] = out.split('\n')[0]
+    if os.path.exists('/etc/init.d/infinidb-em-carbon'):
+        data['has_carbon'] = True
+    if os.path.exists('/etc/init.d/infinidb-em-graphite'):
+        data['has_graphite'] = True
+        rc, out, err = module.run_command("%s/graphite/env/bin/uwsgi --version" % infinidb_installdir)
+        if rc == 0:
+            data['graphite_version'] = out.split('\n')[0]
+    if os.path.exists('/opt/infinidb/em/python-stack'):
+        rc, out, err = module.run_command("cat %s/python-stack/packages/version" % infinidb_installdir)
+        data['has_python_stack'] = True
+        if rc == 0:
+            data['python-stack_version'] = out.split('\n')[0]
+        else:
+            data['python-stack_version'] = ''    # default for now, but this is an error
+
+    rc, out, err = module.run_command("cat %s/tools/packages/version" % infinidb_installdir)
+    if rc == 0:
+        data['tools_version'] = out.split('\n')[0]
+    else:
+        data['tools_version'] = ''    # default for now, but this is an error
+        
+    # check for virtualenv
+    try:
+        import virtualenv
+        data['has_virtualenv'] = True
+    except:
+        pass
+
+    # check for use of default mysql port    
+    rc, out, err = module.run_command("netstat -na | grep ':3306 '")
+    if rc == 0:
+        data['port3306available'] = False
+    else:
+        data['port3306available'] = True        
+    
+    site_facts = dict( ansible_facts = data )
+    module.exit_json(**site_facts)
+
+# import module snippets
+from ansible.module_utils.basic import *
+main()

@@ -1,0 +1,53 @@
+---
+# Execute steps to prepare all hosts for a binary install from a tar file
+
+- name: see if /var/log directory exists
+  shell: test -d /var/log
+  register: doesvarlogExist
+  ignore_errors: true
+- name: create /var/log directory if it does not exist
+  shell: mkdir /var/log
+  when: doesvarlogExist|failed
+- name: set /var/log file attributes
+  file: path=/var/log owner=root group=root mode=0777
+- name: create infinidb file
+  template: src=infinidb.j2 dest=/etc/default/infinidb
+- name: set infinidb file attributes
+  file: path=/etc/default/infinidb owner=root group=root mode=0755
+- name: grep rc.local for infinidb start
+  command: grep "infinidb start" /etc/rc.local
+  register: greprclocalresult
+  ignore_errors: true
+  when: idbuser != "root"
+- name: grep rclocal result success
+  command: echo "infinidb start command already in /etc/rc.local!"
+  when: greprclocalresult|success and idbuser != "root"
+- name: grep rclocal result failed; add infinidb start to rc.local
+  shell: echo "su - {{ idbuser }} -c '{{ idbinstalldir }}/bin/infinidb start'" >> /etc/rc.local
+  when: greprclocalresult|failed and idbuser != "root"
+- name: modify rc.local (comment out exit statement)
+  command: sed -i 's/^exit 0$/# exit 0/' /etc/rc.local
+  when: idbuser != "root"
+# we insert these at the beginning of the .bashrc file to make sure
+# it's befaure any check for non-interactive shells
+- name: Update bashrc non-root user (INFINIDB_INSTALL_DIR)
+  sudo: False
+  lineinfile:
+    dest=/home/{{ idbuser }}/.bashrc
+    line="export INFINIDB_INSTALL_DIR={{ idbinstalldir }}"
+    owner={{ idbuser }}
+    state=present
+    insertbefore=BOF
+    create=yes
+    backup=yes
+  when: idbuser != "root"
+- name: Update bashrc non-root user (LD_LIBRARY_PATH)
+  sudo: False
+  lineinfile:
+    dest=/home/{{ idbuser }}/.bashrc
+    line="export LD_LIBRARY_PATH=$INFINIDB_INSTALL_DIR/lib:$INFINIDB_INSTALL_DIR/mysql/lib/mysql"
+    owner={{ idbuser }}
+    state=present
+    insertafter="export INFINIDB_INSTALL_DIR.*"
+  when: idbuser != "root"
+  

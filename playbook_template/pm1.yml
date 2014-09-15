@@ -1,0 +1,4 @@
+- hosts: pm1
+  sudo: True
+  roles:
+    - pm1

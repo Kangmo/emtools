@@ -1,0 +1,110 @@
+---
+# file: roles/graphite/tasks/main.yml
+- name: get site_facts
+  site_facts:
+  
+# stop services  
+- name: stop carbon service if running
+  service: name={{ carbon_service }} state=stopped
+  when: has_carbon is defined and force_install is defined
+- name: stop graphite service if running
+  service: name={{ graphite_service }} state=stopped
+  when: has_graphite is defined and force_install is defined
+ 
+# prerequisites
+- name: check for prereqs (yum)
+  yum: name={{ item }} state=present
+  with_items:
+  - cairo
+  when: ansible_os_family == "RedHat"
+
+- name: check for prereqs (apt-Ubuntu+Debian7)
+  apt: name={{ item }} state=present
+  with_items:
+  - libcairo2
+  - libpython2.7
+  when: ansible_distribution == "Ubuntu" or (ansible_distribution == "Debian" and ansible_distribution_version[0] == "7")
+
+- name: check for prereqs (apt-Debian6)
+  apt: name={{ item }} state=present
+  with_items:
+  - libcairo2
+  - libpython2.6
+  when: ansible_distribution == "Debian" and ansible_distribution_version[0] == "6" 
+
+- name: ensure graphite install directory exists
+  file: path={{ install_prefix }}/installs/graphite/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: ensure graphite conf directory exists
+  file: path={{ install_prefix }}/conf/graphite/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: ensure graphite whisper storage directory exists
+  file: path={{ install_prefix }}/data/graphite/storage/whisper/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: ensure graphite webapp log directory exists
+  file: path={{ install_prefix}}/log/graphite/webapp/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: ensure ownership of directories
+  file: path={{ item }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} recurse=yes state=directory 
+  with_items:
+    - "{{ install_prefix }}/installs/"
+    - "{{ install_prefix }}/conf/"
+    - "{{ install_prefix }}/data/"
+    - "{{ install_prefix }}/log/"
+
+# package install 
+- name: copy/install tarball
+  unarchive: dest={{ install_prefix }}/installs/graphite/ src={{ install_prefix }}/packages/infinidb-em-graphite-{{ install_graphite_version }}.tar.gz
+  when: has_graphite is not defined or force_install is defined
+
+- name: creating symlink
+  file: src={{ install_prefix }}/installs/graphite/graphite-{{ install_graphite_version }} dest={{ install_prefix }}/graphite owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=link force=yes
+
+- name: install local_settings.py for graphite
+  template: src=../templates/local_settings.py.j2 dest={{ install_prefix }}/conf/graphite/local_settings.py owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0644
+  when: has_graphite is not defined or force_install is defined
+
+- name: run the virtualenv installer
+  shell: "export INFINIDB_HOME={{ install_prefix }}/graphite/env; export PYTHONPATH={{ install_prefix }}/conf/graphite; cd {{ install_prefix }}/graphite; ./install.sh > install.log"
+  when: has_graphite is not defined or force_install is defined
+
+- name: change file ownership
+  file: path={{ install_prefix }}/installs/graphite/graphite-{{ install_graphite_version }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} recurse=yes
+  when: has_graphite is not defined or force_install is defined
+
+- name: change file ownership of db
+  file: path={{ install_prefix}}/data/graphite/ owner={{ infinidb_em_user }} group={{ infinidb_em_user }} recurse=yes state=directory
+
+# install and start services
+- name: install the carbon service script
+  template: src=../templates/carbon-init.d.j2 dest=/etc/init.d/{{ carbon_service }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0755
+  when: has_carbon is not defined or force_install is defined
+
+- name: install carbon.conf for carbon
+  template: src=../templates/carbon.conf.j2 dest={{ install_prefix }}/conf/graphite/carbon.conf owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0644
+  when: has_carbon is not defined or force_install is defined
+
+- name: install storage-schemas.conf for carbon
+  template: src=../templates/storage-schemas.conf.j2 dest={{ install_prefix }}/conf/graphite/storage-schemas.conf owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0644
+  when: has_carbon is not defined or force_install is defined
+
+- name: start the carbon service
+  service: name={{ carbon_service }} enabled=yes state=started
+
+- name: verify carbon started
+  shell: service {{ carbon_service }} status | grep "is running"
+
+- name: install the graphite service script
+  template: src=../templates/graphite-init.d.j2 dest=/etc/init.d/{{ graphite_service }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0755
+  when: has_graphite is not defined or force_install is defined
+
+- name: install the graphite uwsgi conf
+  template: src=../templates/graphite-uwsgi.yaml.j2 dest={{ install_prefix }}/conf/{{ graphite_uwsgi_conf }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0644
+  when: has_graphite is not defined or force_install is defined
+
+- name: start the graphite service
+  service: name={{ graphite_service }} enabled=yes state=started
+
+- name: verify graphite started
+  shell: service {{ graphite_service }} status | grep "is running"
+

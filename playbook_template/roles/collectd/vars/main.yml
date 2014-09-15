@@ -1,0 +1,3 @@
+---
+# file: roles/collectd/vars/main.yml
+collectd_service: infinidb-em-collectd

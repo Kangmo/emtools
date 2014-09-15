@@ -1,0 +1,7 @@
+---
+# file: roles/graphite/vars/main.yml
+carbon_service: infinidb-em-carbon
+carbon_max_creates: 500
+graphite_service: infinidb-em-graphite
+graphite_port: 8180
+graphite_uwsgi_conf: graphite-uwsgi.yaml

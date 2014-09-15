@@ -1,0 +1,9 @@
+{
+    "cluster_name": "hw",
+    "hostnames": [
+        "hw-head.calpont.com"
+    ], 
+    "ssh_key": "-----BEGIN RSA PRIVATE KEY-----\r\nMIIEpAIBAAKCAQEA0NQO/C7ir5tgqrQVX6utjGxrhCqywzWuB80JOivOugVCzDqejHmI/nu8EPu3\r\nF+3LmpI34jXh8+AhyL8Dn7Cdw43++fx8zAGPSalOygfRDENEWptCey6R5xQw4GxoyxSy8DfmG/yj\r\n7IXWNojjrR5xkewKSS7xgDjiNXcFdC0euCsRihTG27d3PZBW9ayEEwMeXThjAZEuT/SW+6WdPWsb\r\n9w9w5vvYWhQtr1kKeaHojnwMqxfnjiTVIs66ck2dwH6mjN0i/PI+zFZW5YF5zuPczr92fiPMnsum\r\n8iAbGUubrqM/SIjkoO4P5vp7hYTXaVM3Kn41Sqj4z8SlDJ4WTBgqDQIDAQABAoIBAFa8zeCXRNa1\r\nzef5VqtfLn2WBu5locyNPlTFKCD+UyZWyxDzBCnKzUkOceYH91u8DIaOVyHhSZG3NbEhDctFW7H/\r\nB7oj0l4WA8MPzMcDiiPyyLBtrqZliHqXm1mMDdbUKSK3xR84x4mVaY1LPG4KqBd5GCifk/WzKtoU\r\nLrK7jvflQ3oqjVTrIifvZYIh4C4NaamotjztIZPtwsTDiIYk0SjxqJQytswIiQt/wPHOR3uHpyQ8\r\nAk6SNzeWtV3ghftjLJDCCyb32fE2j15Tw4bNimhS2Z34kG5INLSy5plwfPVRBPP2kUJk3KVZtpo9\r\nfoG9VxFDiwAve0jmDQKpacdjYS0CgYEA72Bdj+xWrUElSm+OPuhTuo7/Y/lod4RrnBGwPeyng6E2\r\n4v/aZwBc8eIxZNtb43VZm4YO0iJFr+bf4i5I7/ptvp2iskRAskcUpUkCymhFr4DxDcpamJjdV2vr\r\nAdD8bLvd2NVmrOpCWHvbKVrQTyNeKeBJE8mnRFsaCcRZuokaJXsCgYEA31Sb/kclXHq0v3LywKrY\r\nGGF5jyGOoDur06BYumuB2s8BfyE1yOY8Fx01OQ6K2UjOAIRzwP3fJb5pagLdapRQky6GNpeUi9fB\r\n8ms2ygKg6WUxX4Zx9C/U1X4HeYZjOuTVdebJDSr+cpDqaWMQw8EqxbJ1yzOL7/HuZ40CjQ10pBcC\r\ngYA+6Uytrqd5EU4Dqh3wWo7m0P4+ACZ8gsjlU6DGJZRA+/W44xU7TNUgnRnuL9iOhyDtxuXOREOc\r\nX0kn4JI6v85n8nX39Ags0pGSfwXEvHLUFUdFIJF+2W4Ss8In0A0HZrh/bFZ3y3l0V9jZnYxxwBHX\r\nX6LVGIJlbKwDNR9/7th4UQKBgQCqsfWk7WYOAC+kYMxQHIScZexOTNzBdbpIPzdyDPescSn4rD56\r\nthbZp9ZlLMtNdksVtCbxLFlhdN8HSvdHHeNUC2xDz6mXFSrFCdNPpaCto02QcKcqd2CaaQB3jxLL\r\nEdphiirDKMhgcojoUfKfXEY/4r4LuPNNS0Hn3axEeTNcswKBgQCK6Ky4qVt+9DuAZ7Ti3G+X4E0x\r\nPVuo125oFHUtJ1B3JZFO+iWM4hZvw6NKillGNuE0S30FBudXI3GI/0Wb8cl7vdnftISzEA+xrZUo\r\nLMqvuXd1S1KFxtNLLrcvWVYecurE3+jWktJpCw/r1q5BN9grOdEDDYNN44Kh1Ap0QrD4eQ==\r\n-----END RSA PRIVATE KEY-----",
+    "ssh_user": "root"
+}
+

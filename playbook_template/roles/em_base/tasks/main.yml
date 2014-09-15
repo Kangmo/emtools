@@ -1,0 +1,35 @@
+---
+# file: roles/em_base/tasks/main.yml
+- name: get site_facts
+  site_facts:
+- name: create the infinidb-em user
+  user: name={{ infinidb_em_user }} state=present  
+- name: create the infinidb-em group
+  group: name={{ infinidb_em_group }} state=present  
+
+- name: ensure directory structure and ownership
+  file: path={{ item }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} recurse=yes state=directory
+  with_items:
+    - "{{ install_prefix }}"
+    - "{{ install_prefix }}/installs/"
+    - "{{ install_prefix }}/conf/"
+    - "{{ install_prefix }}/data/"
+    - "{{ install_prefix }}/log/"
+    - "{{ install_prefix }}/run/"
+
+- name: create the env-setup script
+  template: src=../templates/env-setup.j2 dest={{ install_prefix }}/env-setup owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0755
+
+- name: check if env-setup already sourced in .bash_profile
+  command: egrep -qs "{{ install_prefix }}/env-setup" /home/{{ infinidb_em_user }}/.bash_profile
+  register: envsetup_check
+  changed_when: false
+  ignore_errors: true
+
+- name: add the call to source env-setup if necessary
+  shell: echo "test -f {{ install_prefix }}/env-setup && source {{ install_prefix }}/env-setup" >> /home/{{ infinidb_em_user }}/.bash_profile
+  when: envsetup_check|failed
+
+- name: create logrotate conf
+  template: src=../templates/infinidb-em.logrotate.j2 dest=/etc/logrotate.d/infinidb-em mode=0644
+

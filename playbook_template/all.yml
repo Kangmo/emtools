@@ -1,0 +1,5 @@
+---
+# file: all.yml
+- include: em_nodes.yml
+- include: oam_servers.yml
+- include: pm1.yml

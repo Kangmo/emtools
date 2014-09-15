@@ -1,0 +1,16 @@
+---
+# file: roles/pm1/tasks/main.yml
+- name: get site_facts
+  site_facts:
+- name: updated QueryTele host
+  command: sudo -u {{ infinidb_user }} -i {{ infinidb_installdir }}/bin/setConfig QueryTele Host {{ em_server }}
+- name: sleep between setConfig calls
+  sudo: False
+  local_action: command sleep 2
+- name: updated QueryTele port
+  command: sudo -u {{ infinidb_user }} -i {{ infinidb_installdir }}/bin/setConfig QueryTele Port 9095
+- name: get current QueryTele Port
+  command: sudo -u {{ infinidb_user }} -i {{ infinidb_installdir }}/bin/getConfig QueryTele Port
+  register: queryteleport
+- fail: msg="QueryTele port not set correctly to 9095"
+  when: queryteleport.stdout != "9095"

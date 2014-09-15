@@ -1,0 +1,124 @@
+#!/bin/bash
+#
+# collectd    Startup script for the Collectd statistics gathering daemon
+# chkconfig: - 99 01
+# description: Collectd is a statistics gathering daemon used to collect \
+#   system information ie. cpu, memory, disk, network
+# processname: collectd
+# config: /etc/collectd.conf
+# config: /etc/sysconfig/collectd
+# pidfile: /var/run/collectd.pid
+
+### BEGIN INIT INFO
+# Provides:          infinidb-em-collectd
+# Required-Start:    $local_fs $remote_fs $network $syslog $all
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop InfiniDB Enterprise Manager collectd
+### END INIT INFO
+
+# Source function library.
+test -r /etc/init.d/functions && source /etc/init.d/functions
+
+RETVAL=0
+ARGS=""
+prog="{{ install_prefix }}/collectd/sbin/collectdmon"
+service="collectd"
+CONFIG={{ install_prefix }}/conf/collectd.conf
+COLLECTD={{ install_prefix }}/collectd/sbin/collectd
+COLLECTDMONPIDDIR={{ install_prefix }}/collectd/var/run
+COLLECTDMONPID="$COLLECTDMONPIDDIR/collectdmon.pid"
+RUNAS={{ infinidb_em_user }}
+
+if [ -r /etc/sysconfig/$service ]; then
+	. /etc/sysconfig/$service
+fi
+
+check_config() {
+        if test ! -r "$CONFIG"; then
+                return 2
+        fi
+        if ! $COLLECTD -t -C "$CONFIG"; then
+                return 1
+        fi
+        return 0
+}
+
+
+start () {
+	echo -n $"Starting collectd: "
+	check_config
+	rc="$?"
+	if test "$rc" -ne 0; then
+		RETVAL=6
+		echo $"not starting due to configuration error"
+		failure $"not starting $service due to configuration error"
+	else
+		if [ -f /etc/redhat-release ]; then
+			daemon --user "${RUNAS:-root}" $prog -P $COLLECTDMONPID -c $COLLECTD -- -C "$CONFIG" $ARGS
+		else
+			start-stop-daemon --quiet --oknodo --pidfile $COLLECTDMONPID --chuid $RUNAS --exec $prog --start -- -P $COLLECTDMONPID -c $COLLECTD -- -C $CONFIG $ARGS
+		fi
+		RETVAL=$?
+		echo
+		[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$service
+	fi
+}
+stop () {
+	echo -n $"Stopping collectd: "
+	if [ -f /etc/redhat-release ]; then
+		killproc -p $COLLECTDMONPID $prog
+	else
+		start-stop-daemon --stop --quiet --oknodo --pidfile "$COLLECTDMONPID"
+	fi
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$service
+}
+status () {
+	if [ -f $COLLECTDMONPID ]; then
+		ps -A -opid | egrep -qs $(cat $COLLECTDMONPID)
+		if [ $? -eq 0 ]; then
+			echo "$prog (pid $(cat $COLLECTDMONPID)) is running..."
+			return 0
+		fi
+	fi
+
+	echo "$prog is stopped"
+	return 1
+}
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status
+	;;
+  restart|reload)
+	check_config
+	rc="$?"
+	if test "$rc" -ne 0; then
+		RETVAL=6
+		echo $"not restarting due to configuration error"
+		failure $"not restarting $service due to configuration error"
+	else
+		stop
+		start
+	fi
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/$service ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 1
+esac
+
+exit $?
+
+# vim:syntax=sh

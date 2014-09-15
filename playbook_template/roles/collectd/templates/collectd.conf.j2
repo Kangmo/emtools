@@ -1,0 +1,279 @@
+#
+# Config file for collectd(1).
+# Please read collectd.conf(5) for a list of options.
+# http://collectd.org/
+#
+
+##############################################################################
+# Global                                                                     #
+#----------------------------------------------------------------------------#
+# Global settings for the daemon.                                            #
+##############################################################################
+
+Hostname    "{{ ansible_fqdn }}"
+#FQDNLookup   true
+#BaseDir     "${prefix}/var/lib/collectd"
+#PIDFile     "${prefix}/var/run/collectd.pid"
+#PluginDir   "${exec_prefix}/lib/collectd"
+#TypesDB     "/opt/collectd/share/collectd/types.db"
+
+#----------------------------------------------------------------------------#
+# When enabled, plugins are loaded automatically with the default options    #
+# when an appropriate <Plugin ...> block is encountered.                     #
+# Disabled by default.                                                       #
+#----------------------------------------------------------------------------#
+#AutoLoadPlugin false
+
+#----------------------------------------------------------------------------#
+# Interval at which to query values. This may be overwritten on a per-plugin #
+# base by using the 'Interval' option of the LoadPlugin block:               #
+#   <LoadPlugin foo>                                                         #
+#       Interval 60                                                          #
+#   </LoadPlugin>                                                            #
+#----------------------------------------------------------------------------#
+Interval     10
+
+#Timeout      2
+#ReadThreads  5
+#WriteThreads 5
+
+# Limit the size of the write queue. Default is no limit. Setting up a limit is
+# recommended for servers handling a high volume of traffic.
+#WriteQueueLimitHigh 1000000
+#WriteQueueLimitLow   800000
+
+##############################################################################
+# Logging                                                                    #
+#----------------------------------------------------------------------------#
+# Plugins which provide logging functions should be loaded first, so log     #
+# messages generated when loading or configuring other plugins can be        #
+# accessed.                                                                  #
+##############################################################################
+
+#LoadPlugin syslog
+LoadPlugin logfile
+
+<Plugin logfile>
+	LogLevel info
+	File "{{ install_prefix }}/log/collectd"
+	Timestamp true
+	PrintSeverity false
+</Plugin>
+
+#<Plugin syslog>
+#	LogLevel info
+#</Plugin>
+
+##############################################################################
+# LoadPlugin section                                                         #
+#----------------------------------------------------------------------------#
+# Lines beginning with a single `#' belong to plugins which have been built  #
+# but are disabled by default.                                               #
+#                                                                            #
+# Lines begnning with `##' belong to plugins which have not been built due   #
+# to missing dependencies or because they have been deactivated explicitly.  #
+##############################################################################
+
+LoadPlugin aggregation
+LoadPlugin cpu
+LoadPlugin df
+LoadPlugin disk
+LoadPlugin interface
+LoadPlugin memory
+LoadPlugin network
+LoadPlugin swap
+LoadPlugin write_graphite
+
+
+##############################################################################
+# Plugin configuration                                                       #
+#----------------------------------------------------------------------------#
+# In this section configuration stubs for each plugin are provided. A desc-  #
+# ription of those options is available in the collectd.conf(5) manual page. #
+##############################################################################
+
+<Plugin "aggregation">
+  <Aggregation>
+    #Host "unspecified"
+    Plugin "cpu"
+    #PluginInstance "unspecified"
+    Type "cpu"
+    #TypeInstance "unspecified"
+
+    GroupBy "Host"
+    GroupBy "TypeInstance"
+
+#    CalculateNum false
+    CalculateSum true
+#    CalculateAverage true
+#    CalculateMinimum false
+#    CalculateMaximum false
+#    CalculateStddev false
+  </Aggregation>
+  <Aggregation>
+    Plugin "disk"
+    Type "disk_octets"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+ <Aggregation>
+    Plugin "disk"
+    Type "disk_ops"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+ <Aggregation>
+    Plugin "disk"
+    Type "disk_merged"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+ <Aggregation>
+    Plugin "disk"
+    Type "disk_time"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+
+ <Aggregation>
+    Plugin "interface"
+    Type "if_errors"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+ <Aggregation>
+    Plugin "interface"
+    Type "if_octets"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+  <Aggregation>
+    Plugin "interface"
+    Type "if_packets"
+    GroupBy "Host"
+    CalculateSum true
+ </Aggregation>
+</Plugin>
+
+<Plugin df>
+#	Device "/dev/hda1"
+#	Device "192.168.0.2:/mnt/nfs"
+#	MountPoint "/home"
+#	FSType "ext3"
+#	IgnoreSelected false
+#	ReportByDevice false
+#	ReportReserved false
+#	ReportInodes false
+	ValuesAbsolute true
+	ValuesPercentage true
+</Plugin>
+
+<Plugin disk>
+	Disk "/^[hs]d[a-z]$/"
+	IgnoreSelected false
+</Plugin>
+
+#<Plugin interface>
+#	Interface "eth0"
+#	IgnoreSelected false
+#</Plugin>
+
+<Plugin "swap">
+	ReportByDevice false
+	ReportBytes true
+</Plugin>
+
+<Plugin write_graphite>
+  <Node "example">
+    Host "{{ groups['oam_server'][0] }}"
+    Port "2003"
+    Protocol "tcp"
+    LogSendErrors true
+#    Prefix "collectd"
+#    Postfix "collectd"
+    StoreRates true
+    AlwaysAppendDS false
+    EscapeCharacter "_"
+  </Node>
+</Plugin>
+
+
+##############################################################################
+# Filter configuration                                                       #
+#----------------------------------------------------------------------------#
+# The following configures collectd's filtering mechanism. Before changing   #
+# anything in this section, please read the `FILTER CONFIGURATION' section   #
+# in the collectd.conf(5) manual page.                                       #
+##############################################################################
+
+# Load required matches:
+#LoadPlugin match_empty_counter
+#LoadPlugin match_hashed
+#LoadPlugin match_regex
+#LoadPlugin match_value
+#LoadPlugin match_timediff
+
+# Load required targets:
+#LoadPlugin target_notification
+#LoadPlugin target_replace
+#LoadPlugin target_scale
+#LoadPlugin target_set
+#LoadPlugin target_v5upgrade
+
+#----------------------------------------------------------------------------#
+# The following block demonstrates the default behavior if no filtering is   #
+# configured at all: All values will be sent to all available write plugins. #
+#----------------------------------------------------------------------------#
+
+#<Chain "PostCache">
+#  Target "write"
+#</Chain>
+
+##############################################################################
+# Threshold configuration                                                    #
+#----------------------------------------------------------------------------#
+# The following outlines how to configure collectd's threshold checking      #
+# plugin. The plugin and possible configuration options are documented in    #
+# the collectd-threshold(5) manual page.                                     #
+##############################################################################
+
+#LoadPlugin "threshold"
+#<Plugin "threshold">
+#  <Type "foo">
+#    WarningMin    0.00
+#    WarningMax 1000.00
+#    FailureMin    0.00
+#    FailureMax 1200.00
+#    Invert false
+#    Instance "bar"
+#  </Type>
+#
+#  <Plugin "interface">
+#    Instance "eth0"
+#    <Type "if_octets">
+#      FailureMax 10000000
+#      DataSource "rx"
+#    </Type>
+#  </Plugin>
+#
+#  <Host "hostname">
+#    <Type "cpu">
+#      Instance "idle"
+#      FailureMin 10
+#    </Type>
+#
+#    <Plugin "memory">
+#      <Type "memory">
+#        Instance "cached"
+#        WarningMin 100000000
+#      </Type>
+#    </Plugin>
+#
+#    <Type "load">
+#    	DataSource "midterm"
+#    	FailureMax 4
+#    	Hits 3
+#    	Hysteresis 3
+#    </Type>
+#  </Host>
+#</Plugin>

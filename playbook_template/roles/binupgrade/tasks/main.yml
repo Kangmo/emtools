@@ -1,0 +1,26 @@
+---
+# Uninstall old infinidb version, then copy and untar
+# new infinidb binary tar file, and run postConfigure
+
+- name: copy infinidb tar file
+  copy: src={{ pkgdir }}/{{ upgfile }} dest={{ homedir }}
+- name: execute binary pre-uninstall for root
+  command: "{{ idbinstalldir }}/bin/pre-uninstall"
+  when: idbuser == "root"
+- name: execute binary pre-uninstall for nonroot
+  command: "{{ idbinstalldir }}/bin/pre-uninstall --installdir={{ idbinstalldir }}"
+  when: idbuser != "root"
+- name: save off the previous Calpont.xml config file
+  command: mv {{ idbinstalldir }}/etc/Calpont.xml {{ idbinstalldir }}/etc/Calpont.xml.rpmsave
+- name: untar the infinidb tar file
+  command: tar -zxf {{ homedir }}/{{ upgfilebase }} chdir={{ idbbasedir }}
+- name: execute binary post-install for root
+  command: "{{ idbinstalldir }}/bin/post-install"
+  when: idbuser == "root"
+- name: execute binary post-install for nonroot
+  command: "{{ idbinstalldir }}/bin/post-install --installdir={{ idbinstalldir }}"
+  when: idbuser != "root"
+- name: modify previous Calpont.xml config file
+  command: sed -i "s/<DBRootStorageType>local<\\/DBRootStorageType>/<DBRootStorageType>internal<\\/DBRootStorageType>/" {{ idbinstalldir }}/etc/Calpont.xml.rpmsave
+- name: run postconfigure
+  command: "{{ idbinstalldir }}/bin/postConfigure {{ postconfig_opts }} -n -c {{ idbinstalldir }}/etc/Calpont.xml.rpmsave"

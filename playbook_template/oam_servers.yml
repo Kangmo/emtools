@@ -1,0 +1,7 @@
+- hosts: oam_server
+  sudo: True
+  roles:
+    - em_base
+    - python_stack
+    - graphite
+

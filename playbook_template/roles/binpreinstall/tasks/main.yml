@@ -1,0 +1,4 @@
+---
+# Execute preliminary steps for binary install
+
+- include: setup.yml

@@ -1,0 +1,35 @@
+from graphite.app_settings import *
+import os
+
+TIME_ZONE = 'America/Chicago'
+GRAPHITE_ROOT = '{{ install_prefix }}/graphite/env'
+CONF_DIR = '{{ install_prefix }}/conf/graphite'
+STORAGE_DIR = '{{ install_prefix }}/data/graphite/storage'
+CONTENT_DIR = '{{ install_prefix }}/graphite/env/webapp/content'
+LOG_DIR = '{{ install_prefix }}/log/graphite/webapp'
+INDEX_FILE = '{{ install_prefix }}/data/graphite/index'
+
+DATABASES = {
+    'default': {
+        'NAME': '{{ install_prefix }}/data/graphite/storage/graphite.db',
+        'ENGINE': 'django.db.backends.sqlite3',
+#        'USER': '',
+#        'PASSWORD': '',
+        'HOST': '',
+        'PORT': ''
+    }
+}
+
+ALLOWED_HOSTS = '*'
+
+SECRET_KEY = 'Calpont1'
+
+MIDDLEWARE_CLASSES += (
+    'corsheaders.middleware.CorsMiddleware',
+)
+
+INSTALLED_APPS += (
+    'corsheaders',
+)
+
+CORS_ORIGIN_ALLOW_ALL = True

@@ -1,0 +1,43 @@
+---
+# Generate support package by going to each host, generate package
+# Fetch all packages back to aggregate 
+
+- hosts: all
+  vars:
+    remote_backup_location: /tmp/
+    remote_backup_filename: infinidb-em-support_package
+    local_backup_location: /tmp/
+    local_backup_packages_directory: infinidb-em-support_packages/
+    local_backup_filename: infinidb-em-support_packages
+    support_items:
+      - /opt/infinidb/em/conf/
+      - /opt/infinidb/em/log/
+      - /opt/infinidb/em/data/clusters/
+      - /opt/infinidb/em/data/emServer.h2.db
+  tasks:
+  - name: Delete any existing remote support package
+    file: path={{ remote_backup_location }}{{ remote_backup_filename }}{{ item }} state=absent
+    with_items:
+      - .tar
+      - .tar.gz
+  - name: Check if file exists
+    stat: path={{ item }}
+    with_items: support_items
+    register: stat
+  - name: Create remote support package
+    command: tar -rf {{ remote_backup_location }}{{ remote_backup_filename }}.tar {{ item.item }}
+    when: item.stat.exists == true
+    with_items: stat.results
+  - name: Compressing remote support package
+    command: gzip -f {{ remote_backup_location }}{{ remote_backup_filename }}.tar
+  - name: Delete any existing local support packages
+    file: path={{ local_backup_location}}{{ item }} state=absent
+    with_items: 
+      - "{{ local_backup_packages_directory }}"
+      - "{{ local_backup_filename }}.tar.gz"
+  - name: Fetch remote support package
+    fetch: src={{ remote_backup_location }}{{ remote_backup_filename }}.tar.gz dest={{ local_backup_location }}{{ local_backup_packages_directory }}
+  - name: Save information about hosts
+    local_action: shell echo '{{ hostvars|to_nice_json }}' >> {{ local_backup_location}}{{ local_backup_packages_directory }}hostinformation.log
+  - name: .tar.gz support packages
+    local_action: command tar -czf {{ local_backup_location}}{{ local_backup_filename }}.tar.gz {{ local_backup_location }}{{ local_backup_packages_directory }}

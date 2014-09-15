@@ -1,0 +1,8 @@
+{{ install_prefix }}/log/emtools.log {{ install_prefix }}/log/graphite-uwsgi.log {{ install_prefix }}/log/server.log {{ install_prefix }}/log/collectd {
+    missingok
+    rotate 3
+    size 30M
+    copytruncate
+    compress
+}
+

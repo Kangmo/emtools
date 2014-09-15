@@ -1,0 +1,51 @@
+---
+# file: roles/collectd/tasks/main.yml
+- name: get site_facts
+  site_facts:
+
+- name: stop service if running
+  service: name={{ collectd_service }}  state=stopped
+  when: has_collectd is defined and force_install is defined
+
+- name: check for prereqs (yum)
+  yum: name={{ item }} state=present
+  with_items:
+  - expect
+  - libtool-ltdl
+  when: ansible_os_family == "RedHat"
+
+- name: check for prereqs (apt)
+  apt: name={{ item }} state=present
+  with_items:
+  - expect
+  - libltdl7
+  when: ansible_os_family == "Debian"
+
+- name: ensure collectd install directory exists
+  file: path={{ install_prefix }}/installs/collectd/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: copy/install tarball
+  unarchive: dest={{ install_prefix }}/installs/collectd/ src={{ install_prefix }}/packages/infinidb-em-collectd-{{ install_collectd_version }}.tar.gz
+  when: has_collectd is not defined or force_install is defined
+
+- name: change file ownership
+  file: path={{ install_prefix }}/installs/collectd/collectd owner={{ infinidb_em_user }} group={{ infinidb_em_group }} recurse=yes
+  when: has_collectd is not defined or force_install is defined
+
+- name: creating symlink
+  file: src={{ install_prefix }}/installs/collectd/collectd dest={{ install_prefix }}/collectd owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=link force=yes
+
+- name: install the service script
+  template: src=../templates/collectd-init.d.j2 dest=/etc/init.d/{{ collectd_service }} mode=0755
+  when: has_collectd is not defined or force_install is defined
+
+- name: install the .conf file
+  template: src=../templates/collectd.conf.j2 dest={{ install_prefix }}/conf/collectd.conf owner={{ infinidb_em_user }} group={{ infinidb_em_group }} mode=0644
+  when: has_collectd is not defined or force_install is defined
+
+- name: start the service
+  service: name={{ collectd_service }} enabled=yes state=started
+
+- name: verify collectd started
+  shell: service {{ collectd_service }} status | grep "is running"
+  

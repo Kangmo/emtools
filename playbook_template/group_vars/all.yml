@@ -1,0 +1,9 @@
+---
+install_prefix: /opt/infinidb/em
+infinidb_em_user: infinidb-em
+infinidb_em_group: infinidb-em
+install_collectd_version: 5.4.1
+install_graphite_version: 0.9.10
+install_server_version: BETA
+install_pythonstack_version: BETA
+install_tools_version: BETA

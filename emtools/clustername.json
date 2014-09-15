@@ -1,0 +1,22 @@
+{
+    "cluster_name": "tester",
+    "action": "set",
+    "set_params":[
+        { "em_category" : "UM",
+          "em_parameter" : "TotalUmMemory",
+          "value" : "6G" },
+        { "em_category" : "PM",
+          "em_parameter" : "PmMaxMemorySmallSide",
+          "value" : "64M" },
+        { "em_category" : "PM",
+          "em_parameter" : "NumBlocksPct",
+          "value" : "10" },
+        { "em_category" : "PM",
+          "em_parameter" : "VersionBufferFileSize",
+          "value" : "1GB" },
+        { "em_category" : "PM",
+          "em_parameter" : "CoreFileFlag",
+          "value" : "n" }
+    ]
+     
+}

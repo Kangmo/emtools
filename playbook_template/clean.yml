@@ -1,0 +1,35 @@
+---
+- hosts: all
+  vars:
+  tasks:
+  - name: check for collectd service
+    command: test -f /etc/init.d/infinidb-em-collectd
+    register: collectd_service_exists
+    ignore_errors: True
+  - name: check for carbon service
+    command: test -f /etc/init.d/infinidb-em-carbon
+    register: carbon_service_exists
+    ignore_errors: True
+  - name: check for graphite service
+    command: test -f /etc/init.d/infinidb-em-graphite
+    register: graphite_service_exists
+    ignore_errors: True
+
+  - name: stop collectd
+    service: name=infinidb-em-collectd state=stopped
+    when: collectd_service_exists.rc == 0
+  - name: delete collectd service
+    file: path=/etc/init.d/infinidb-em-collectd state=absent
+    when: collectd_service_exists.rc == 0
+  - name: stop carbon
+    service: name=infinidb-em-carbon state=stopped
+    when: carbon_service_exists.rc == 0
+  - name: delete carbon service
+    file: path=/etc/init.d/infinidb-em-carbon state=absent
+    when: carbon_service_exists.rc == 0
+  - name: stop graphite
+    service: name=infinidb-em-graphite state=stopped
+    when: graphite_service_exists.rc == 0
+  - name: delete graphite service
+    file: path=/etc/init.d/infinidb-em-graphite state=absent
+    when: graphite_service_exists.rc == 0

@@ -1,0 +1,11 @@
+---
+- hosts: all
+  sudo: True
+  vars:
+  tasks:
+  - name: get site_facts
+    site_facts:
+  - name: get Calpont.xml if appropriate
+    fetch: src={{ infinidb_xml }} dest=cluster_files/Calpont.xml flat=yes
+    when: infinidb_xml is defined
+

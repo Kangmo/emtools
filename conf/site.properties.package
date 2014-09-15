@@ -1,0 +1,4 @@
+[defaults]
+emtools.logname = /opt/infinidb/em/log/emtools.log
+emtools.playbookmgr.cluster_base = /opt/infinidb/em/data/clusters
+include = /opt/infinidb/em/conf/emtools.properties

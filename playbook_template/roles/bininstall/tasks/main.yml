@@ -1,0 +1,26 @@
+---
+# Copy and untar infinidb binary tar file, and run postConfigure
+
+- name: copy infinidb tar file
+  copy: src={{ pkgdir }}/{{ pkgfile }} dest={{ homedir }}
+- name: copy postconfigure input file
+  copy: src={{ rundir }}/postconfigure.in dest={{ homedir }}/postconfigure.in
+- name: See if Calpont.xml file exists
+  shell: test -e {{ idbinstalldir }}/etc/Calpont.xml
+  register: doesConfigfileExist
+  ignore_errors: true
+- name: untar the infinidb tar file if the system has not already been installed
+  command: tar -zxf {{ homedir }}/{{ pkgfilebase }} chdir={{ idbbasedir }}
+  when: doesConfigfileExist|failed
+- name: run post-install for root
+  command: "{{ idbinstalldir }}/bin/post-install"
+  when: idbuser == "root"
+- name: run post-install for nonroot
+  command: "{{ idbinstalldir }}/bin/post-install --installdir={{ idbinstalldir }}"
+  when: idbuser != "root"
+- name: test for prior install
+  command: grep 'InitialInstallFlag>n</InitialInstallFlag' {{ idbinstalldir }}/etc/Calpont.xml
+  register: installFlagIsN
+  ignore_errors: true
+- include: postconfig.yml
+  when: installFlagIsN|success

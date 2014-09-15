@@ -1,0 +1,16 @@
+---
+# main yml file to perform binary upgrade of infinidb
+
+# Establish homedir for idbuser; to be referenced by tasks
+# running as root or as nonroot.
+- hosts: infinidb_nodes
+  tasks:
+  - set_fact: homedir={{ ansible_env.HOME }}
+  - set_fact: idbbasedir="/usr/local"
+    when:     idbuser == 'root'
+  - set_fact: idbbasedir={{ homedir }}
+    when:     idbuser != 'root'
+
+- hosts: '{{ pm1_host }}'
+  roles:
+    - binupgrade

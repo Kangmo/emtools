@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# When run using source as directed, $0 gets set to bash, so we must use $BASH_SOURCE
+if [ -n "$BASH_SOURCE" ] ; then
+    EMTOOLS_DIR=`dirname $BASH_SOURCE`
+elif [ $(basename $0) = "env-setup" ]; then
+    EMTOOLS_DIR=`dirname $0`
+else
+    # not sure what this case is handling
+    EMTOOLS_DIR="$PWD"
+fi
+
+# The below is an alternative to readlink -fn which doesn't exist on OS X
+# Source: http://stackoverflow.com/a/1678636
+FULL_PATH=`python -c "import os; print(os.path.realpath('$EMTOOLS_DIR'))"`
+
+export INFINIDB_EM_TOOLS_HOME=$FULL_PATH
+export ANSIBLE_LIBRARY=$ANSIBLE_LIBRARY:$INFINIDB_EM_TOOLS_HOME/share/infinidb
+export PYTHONPATH=$PYTHONPATH:$INFINIDB_EM_TOOLS_HOME
+
+if [ $# -eq 0 -o "$1" != "-q" ] ; then
+    echo ""
+    echo "Setting up emtools to run out of checkout..."
+    echo ""
+    echo "INFINIDB_EM_TOOLS_HOME=$INFINIDB_EM_TOOLS_HOME"
+    echo "ANSIBLE_LIBRARY=$ANSIBLE_LIBRARY"
+    echo "PYTHONPATH=$PYTHONPATH"
+    echo ""
+    
+    echo "Done!"
+    echo ""
+fi
+

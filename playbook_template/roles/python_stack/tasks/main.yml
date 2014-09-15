@@ -1,0 +1,33 @@
+---
+# file: roles/python_stack/tasks/main.yml
+- name: get site_facts
+  site_facts:
+
+- name: check for python-setuptools (yum)
+  yum: name=python-setuptools state=present
+  when: ansible_os_family == "RedHat"
+
+- name: check for python-setuptools (apt)
+  apt: name={{ item }} state=present
+  with_items:
+  - python-setuptools
+  when: ansible_os_family == "Debian"
+
+- name: check for virtualenv
+  command: easy_install virtualenv
+  when: has_virtualenv is not defined
+
+- name: ensure python-stack install directory exists
+  file: path={{ install_prefix }}/installs/python-stack/ owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=directory
+
+- name: copy/install tarball
+  unarchive: dest={{ install_prefix }}/installs/python-stack src={{ install_prefix }}/packages/infinidb-em-python_stack-{{ install_pythonstack_version }}.tar.gz
+  when: has_python_stack is not defined or force_install is defined
+
+- name: change file ownership
+  file: path={{ install_prefix }}/python-stack/python-stack-{{ install_pythonstack_version }} owner={{ infinidb_em_user }} group={{ infinidb_em_group }} recurse=yes
+  when: has_python_stack is not defined or force_install is defined
+
+- name: creating symlink
+  file: src={{ install_prefix }}/installs/python-stack/python-stack-{{ install_pythonstack_version }} dest={{ install_prefix }}/python-stack owner={{ infinidb_em_user }} group={{ infinidb_em_group }} state=link force=yes
+

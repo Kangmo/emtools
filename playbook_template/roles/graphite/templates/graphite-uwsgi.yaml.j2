@@ -1,0 +1,16 @@
+uwsgi:
+  em_home: {{ install_prefix }}
+  http: 0.0.0.0:8180
+  logto: %(em_home)/log/graphite-uwsgi.log
+  logfile-chmod: 664
+  logfile-chown: true
+  log-backupname:  %(em_home)/log/graphite-uwsgi-old.log
+  log-maxsize:  100000000
+  log-reopen: true
+  master: true
+  processes: 4
+  home: %(em_home)/graphite/env
+  wsgi-file: %(em_home)/graphite/env/conf/graphite.wsgi
+  check-static: %(em_home)/graphite/env/webapp
+  pythonpath: %(em_home)/conf/graphite
+

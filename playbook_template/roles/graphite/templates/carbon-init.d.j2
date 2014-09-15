@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# carbon-cache - This script starts and stops the carbon-cache service.
+#
+# chkconfig:   - 85 15
+# description: carbon-cache accepts graphite metrics and writes them to
+#              disk using whisper
+# processname: carbon-cache.py
+# config:      $EM_PREFIX/graphite/env/conf/carbon.con
+
+### BEGIN INIT INFO
+# Provides:          infinidb-em-carbon-cache
+# Required-Start:    $local_fs $remote_fs $network $syslog $all
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop InfiniDB Enterprise Manager carbon-cache
+### END INIT INFO
+
+# Source function library.
+test -f /etc/rc.d/init.d/functions && source /etc/rc.d/init.d/functions
+
+EM_PREFIX="{{ install_prefix }}"
+exec="$EM_PREFIX/graphite/env/bin/carbon-cache.py"
+prog=$(basename "$exec")
+CARBON_CONFIG_PATH="$EM_PREFIX/conf/graphite/carbon.conf"
+args="--config=$CARBON_CONFIG_PATH"
+CARBON_CACHE_PIDDIR="$EM_PREFIX/run"
+CARBON_CACHE_PIDFILE="$CARBON_CACHE_PIDDIR/carbon-cache-a.pid"
+RUNAS="{{ infinidb_em_user }}"
+
+restart() {
+    stop
+    start
+}
+
+status() {
+	if [ -f $CARBON_CACHE_PIDFILE ]; then
+		ps -A -opid | egrep -qs $(cat $CARBON_CACHE_PIDFILE)
+		if [ $? -eq 0 ]; then
+			echo "$prog (pid $(cat $CARBON_CACHE_PIDFILE)) is running..."
+			return 0
+		fi
+	fi
+
+	echo "$prog is stopped"
+	return 1
+}
+
+start() {
+    echo -n 'Starting carbon-cache...'
+    if [ -f /etc/redhat-release ]; then
+        daemon --user "${RUNAS:-root}" "$exec $args start"
+    else
+        start-stop-daemon --start --quiet --oknodo --chuid $RUNAS --exec $exec -- $args start
+    fi
+    retval=$?
+    echo
+    return $retval
+}
+
+stop() {
+    echo -n 'Stopping carbon-cache...'
+    if [ -f /etc/redhat-release ]; then
+        killproc -p "$CARBON_CACHE_PIDFILE" "$prog"
+    else
+	start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile "$CARBON_CACHE_PIDFILE"
+    fi
+    retval=$?
+    echo
+    return $retval
+}
+
+case $1 in
+    condrestart|try-restart)
+        status 2>/dev/null && restart
+        ;;
+    reload|force-reload)
+        restart
+        ;;
+    restart)
+        restart
+        ;;
+    start)
+        start
+        ;;
+    status)
+        status
+        ;;
+    status_q)
+        status >/dev/null 2>&1
+        ;;
+    stop)
+        stop
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+        ;;
+esac
+
+exit $?
